@@ -70,5 +70,12 @@ class OrderResponse(BaseModel):
     order_items: list[OrderItemResponse]
 
 
+class PaginatedOrderResponse(BaseModel):
+    items: list[OrderResponse]
+    page: int
+    page_size: int
+
+
+
 
 

@@ -1,5 +1,6 @@
-from sqlalchemy import String, ForeignKey
+from sqlalchemy import String, ForeignKey, DateTime, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from datetime import datetime
 
 class Base(DeclarativeBase):
     pass
@@ -14,6 +15,8 @@ class Customer(Base):
 
     orders: Mapped[list["Order"]] = relationship(back_populates="customer")
 
+
+
 class Order(Base):
     __tablename__ = "orders"
 
@@ -21,9 +24,11 @@ class Order(Base):
     customer_id: Mapped[int] = mapped_column(ForeignKey("customers.id"))
     total_amount: Mapped[int] = mapped_column(default=0)
     status: Mapped[str] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=func.now())
 
     customer: Mapped["Customer"] = relationship(back_populates="orders")
     order_items: Mapped[list["OrderItem"]] = relationship(back_populates="order")
+
 
 
 class Product(Base):
@@ -49,6 +54,7 @@ class OrderItem(Base):
     product: Mapped["Product"] = relationship(back_populates="order_items")
 
 
+print(datetime.now())
 
 
 

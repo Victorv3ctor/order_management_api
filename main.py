@@ -3,15 +3,15 @@ from models import Customer, Product, Order, OrderItem
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Query
 
 from schemas import (
     CustomerResponse, CustomerCreate, ProductCreate, ProductResponse,
-    OrderResponse, OrderCreate, OrderStatusUpdate
+    OrderResponse, OrderCreate, OrderStatusUpdate, PaginatedOrderResponse
 )
 
 from service import valid_status_transition, total_price_calculation
-from repository import reduce_stock
+from repository import reduce_stock, get_paginated_orders
 
 
 app = FastAPI()
@@ -28,7 +28,7 @@ def add_new_customer(payload: CustomerCreate, db: Session = Depends(get_db)):
     return customer
 
 @app.get('/customers/{customer_id}', response_model=CustomerResponse)
-def get_customer(customer_id: int, db: Session = Depends(get_db)):
+def get_customer(customer_id: int, db: Session = Depends(get_db)) :
     customer = db.get(Customer, customer_id)
     if not customer:
         raise HTTPException(status_code=404, detail='customer id not found')
@@ -96,12 +96,26 @@ def change_order_status(order_id: int, payload: OrderStatusUpdate, db: Session =
 
     return order
 
-@app.get('/orders/{order_id}', response_model=OrderResponse)
-def get_order(order_id:int, db:Session=Depends(get_db)):
-    order = db.get(Order, order_id)
-    if not order:
-        raise HTTPException(status_code=404, detail='order id not found')
-    return order
+
+
+@app.get('/orders', response_model = PaginatedOrderResponse)
+def get_orders(
+        page: int = Query(ge=1),
+        page_size: int = Query(ge=1, le=20),
+        status: str = Query(default=None),
+        customer_id: int = Query(ge=1, default=None),
+        sort: str = Query(default=None),
+        db:Session=Depends(get_db)
+        ):
+
+    return get_paginated_orders(
+        db=db,
+        page=page,
+        page_size=page_size,
+        status=status,
+        customer_id=customer_id,
+        sort=sort
+    )
 
 @app.post('/products', response_model=ProductResponse, status_code=201)
 def add_product(payload: ProductCreate, db:Session=Depends(get_db)):
