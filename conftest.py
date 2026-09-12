@@ -9,6 +9,7 @@ from models import OrderItem, Order, Customer, Product
 import os
 from dotenv import load_dotenv
 
+
 load_dotenv()
 
 """API TESTS"""
@@ -35,7 +36,7 @@ def test_db_session():
 @pytest.fixture
 def client(test_db_session):
     app.dependency_overrides[get_db] = overrides_db  # podmienia globalne Depends = get_db na Depends = overrides_db
-    #kazdy request wykonywany przez client.method, widzi Depends(overrides_db)
+    #kazdy endpoint  wykonywany przez client.method, widzi Depends(overrides_db)
     client = TestClient(app)
 
     yield client

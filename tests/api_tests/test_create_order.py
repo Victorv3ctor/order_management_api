@@ -5,9 +5,11 @@ import pytest
 @pytest.fixture
 def customer_and_product(test_db_session):
     db = test_db_session()
+
     customer = Customer(id=1, name='order_test', email='order_test@example.com')
     product = Product(id=1, name = 'tv', price=10, stock_quantity=5)
     product1 = Product(id=2, name = 'phone', price=10, stock_quantity=5)
+
     db.add(customer)
     db.add(product)
     db.add(product1)

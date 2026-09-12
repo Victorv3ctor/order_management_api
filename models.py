@@ -16,7 +16,6 @@ class Customer(Base):
     orders: Mapped[list["Order"]] = relationship(back_populates="customer")
 
 
-
 class Order(Base):
     __tablename__ = "orders"
 
@@ -28,7 +27,6 @@ class Order(Base):
 
     customer: Mapped["Customer"] = relationship(back_populates="orders")
     order_items: Mapped[list["OrderItem"]] = relationship(back_populates="order")
-
 
 
 class Product(Base):
@@ -54,7 +52,7 @@ class OrderItem(Base):
     product: Mapped["Product"] = relationship(back_populates="order_items")
 
 
-print(datetime.now())
+
 
 
 

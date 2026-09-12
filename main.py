@@ -4,6 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from fastapi import FastAPI, Depends, HTTPException, Query
+from typing import Annotated, Literal
 
 from schemas import (
     CustomerResponse, CustomerCreate, ProductCreate, ProductResponse,
@@ -12,6 +13,7 @@ from schemas import (
 
 from service import valid_status_transition, total_price_calculation
 from repository import reduce_stock, get_paginated_orders
+
 
 
 app = FastAPI()
@@ -96,15 +98,13 @@ def change_order_status(order_id: int, payload: OrderStatusUpdate, db: Session =
 
     return order
 
-
-
 @app.get('/orders', response_model = PaginatedOrderResponse)
 def get_orders(
-        page: int = Query(ge=1),
-        page_size: int = Query(ge=1, le=20),
-        status: str = Query(default=None),
-        customer_id: int = Query(ge=1, default=None),
-        sort: str = Query(default=None),
+        page: Annotated[int, Query(ge=1)],
+        page_size: Annotated[int, Query(ge=1, le=20)],
+        status: Literal["paid", "cancelled", "processing", "shipped", "completed"] | None = None,
+        customer_id: Annotated[int | None, Query(ge=1)] = None,
+        sort: Literal["total_amount", "created_at", "order_id"] | None = None,
         db:Session=Depends(get_db)
         ):
 

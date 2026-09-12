@@ -1,21 +1,14 @@
 from pydantic import BaseModel, ConfigDict, Field
 from typing import Literal
+import datetime
 
 """CUSTOMER"""
 class CustomerCreate(BaseModel):
-    #nie ma id, bo klient nie  podaje id przy tworzeniu
     name: str
     email: str
 
-    # orders: list[OrderResponse] #deklarujesz ze orders, to lista obiektow Order,
-    # a order ma juz swoj response, logiczne
-
-
 class CustomerResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    #^ wolno ci czytac dane z atrybutow obiektu
-    #(customer.id, customer.name, customer.email),
-    # bo my zwracamy z endpointa obiekt sql alchemy
 
     id: int
     name: str
@@ -26,7 +19,6 @@ class ProductCreate(BaseModel):
     name: str
     price: int
     stock_quantity: int
-
 
 class ProductResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -48,7 +40,7 @@ class OrderItemResponse(BaseModel):
 
 class OrderItemCreate(BaseModel):
     product_id: int
-    qty: int = Field(gt=0) #greater than 0, ta wartosc musi byc wieksze od 0 (wejscie)
+    qty: int = Field(gt=0)
 
 
 """ORDER"""
@@ -67,13 +59,18 @@ class OrderResponse(BaseModel):
     customer_id: int
     status: str
     total_amount: int
+    created_at: datetime.datetime
     order_items: list[OrderItemResponse]
 
 
+"""PAGINATION"""
 class PaginatedOrderResponse(BaseModel):
     items: list[OrderResponse]
     page: int
     page_size: int
+    total_count: int
+    has_next_page: bool
+    has_previous_page: bool
 
 
 
