@@ -1,6 +1,6 @@
 from sqlalchemy import update, and_, select, func
 from sqlalchemy.orm import Session
-from models import Product, Order
+from models import Product, Order, Customer
 
 def reduce_stock(db: Session, product_id: int, qty: int):
     stmt = (
@@ -23,8 +23,8 @@ def get_paginated_orders(
         page: int,
         page_size: int,
         status: str | None = None,
+        sort: str | None = None,
         customer_id: int |None = None,
-        sort: str | None = None
 ):
     offset = (page - 1) * page_size
     conditions = []
@@ -64,6 +64,64 @@ def get_paginated_orders(
         "total_count": total_records,
         "has_next_page": (page*page_size) < total_records,
         "has_previous_page": page > 1
+    }
+
+def get_customers_data(db: Session):
+    stmt = select(Customer)
+    customers = db.execute(stmt).scalars().all()
+
+    return {
+        "customers" : customers
+    }
+
+def get_paginated_products(
+        db: Session,
+        page: int,
+        page_size : int,
+        name: str | None = None,
+        sort: str | None = None, #stock, #qty
+        product_id: int | None = None,
+):
+
+    conditions = []
+
+    sort_filters = {
+        'price': Product.price,
+        'stock': Product.stock_quantity
+    }
+
+    offset = (page - 1) * page_size
+
+    stmt = (
+        select(Product)
+        .offset(offset)
+        .limit(page_size)
+        .where()
+    )
+
+    if product_id:
+        conditions.append(Product.id==product_id)
+
+    if name:
+        conditions.append(Product.name.contains(name))
+
+    if sort:
+        stmt = stmt.order_by(sort_filters.get(sort).desc())
+
+    products = db.execute(stmt).scalars().all()
+
+    stmt1 = select(func.count(Product.id)).where(*conditions)
+    total_count = db.execute(stmt1).scalar()
+
+
+
+    return {
+        'items': products,
+        'page': page,
+        'page_size': page_size,
+        'total_count': total_count,
+        'has_next_page': (page*page_size) < total_count,
+        'has_previous_page': page > 1
     }
 
 

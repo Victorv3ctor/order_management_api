@@ -3,7 +3,7 @@ def valid_status_transition(order_status, payload_status):
         'pending': ['paid', 'cancelled'],
         'paid': ['processing', 'cancelled'],
         'processing': ['shipped'],
-        'shipped': ['completed']  # shipped moze przejsc na completed
+        'shipped': ['completed']
     }
     allowed_statuses = order_status_mapper.get(order_status, None)
 

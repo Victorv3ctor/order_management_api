@@ -9,11 +9,16 @@ from models import OrderItem, Order, Customer, Product
 import os
 from dotenv import load_dotenv
 
+#Fixme 3
+# do bazy testowej zrobic Base.create_all na podstawie zmienionych
+# modeli (Do Customers dodana hashed_password kolumna) - Pamietac o tym,
+# bo teraz mamy rozbieznosc baz pomiedzy produkcyjna a testowa.
+# Napewno do poprawy testy ze wzgledu na dodanie kolumny role w customers
 
 load_dotenv()
 
 """API TESTS"""
-#FUNKCJA ZASTEPUJACA DEPENDS GET_DB -> get_db = overrides_db - polaczenie do testowej
+# get_db dummy
 def overrides_db():
     connection_url = os.getenv("DB_TESTS")
     engine = create_engine(connection_url)
@@ -35,8 +40,7 @@ def test_db_session():
 #FAST API TESTCLIENT
 @pytest.fixture
 def client(test_db_session):
-    app.dependency_overrides[get_db] = overrides_db  # podmienia globalne Depends = get_db na Depends = overrides_db
-    #kazdy endpoint  wykonywany przez client.method, widzi Depends(overrides_db)
+    app.dependency_overrides[get_db] = overrides_db
     client = TestClient(app)
 
     yield client
@@ -51,10 +55,6 @@ def client(test_db_session):
     db.close()
 
     app.dependency_overrides.clear()
-    #czyszczone, bo dla calego procesu pytest, jesli jakis test
-    #bedzie chcial dzialac na prawdziwym get_db, czyli nie podmionionym wpisie w
-    #slowniku instancji app, to bedzie mogl to zrobic. Inaczej
-    #wpis w  slowniku instancji app pozostanie dla calego procesu pytest.
 
 
 """UNIT TESTS"""

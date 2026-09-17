@@ -10,8 +10,9 @@ class Customer(Base):
     __tablename__ = "customers"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(100))
     email: Mapped[str] = mapped_column(String(255), unique=True)
+    hashed_password: Mapped[str] = mapped_column(String(255))
+    role: Mapped[str] = mapped_column(String(100))
 
     orders: Mapped[list["Order"]] = relationship(back_populates="customer")
 

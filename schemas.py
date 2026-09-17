@@ -2,17 +2,35 @@ from pydantic import BaseModel, ConfigDict, Field
 from typing import Literal
 import datetime
 
+"""TOKEN"""
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str
+
+
 """CUSTOMER"""
 class CustomerCreate(BaseModel):
-    name: str
     email: str
+    password: str
 
 class CustomerResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    name: str
     email: str
+
+
+class CustomerDetailedResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    email: str
+    role: str
+
+
+class CustomersResponse(BaseModel):
+    customers: list[CustomerDetailedResponse]
+
 
 """PRODUCT"""
 class ProductCreate(BaseModel):
@@ -27,8 +45,6 @@ class ProductResponse(BaseModel):
     name: str
     price: int
     stock_quantity: int
-
-
 
 """ORDER ITEM"""
 
@@ -45,23 +61,20 @@ class OrderItemCreate(BaseModel):
 
 """ORDER"""
 class OrderCreate(BaseModel):
-    customer_id: int
     items: list[OrderItemCreate] = Field(min_length=1)
 
 class OrderStatusUpdate(BaseModel):
     status: Literal["paid", "processing", "shipped", "completed", "cancelled"]
-
 
 class OrderResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
     customer_id: int
-    status: str
     total_amount: int
+    status: str
     created_at: datetime.datetime
     order_items: list[OrderItemResponse]
-
 
 """PAGINATION"""
 class PaginatedOrderResponse(BaseModel):
@@ -72,7 +85,13 @@ class PaginatedOrderResponse(BaseModel):
     has_next_page: bool
     has_previous_page: bool
 
-
+class PaginatedProductsResponse(BaseModel):
+    items: list[ProductResponse]
+    page: int
+    page_size: int
+    total_count: int
+    has_next_page: bool
+    has_previous_page: bool
 
 
 
