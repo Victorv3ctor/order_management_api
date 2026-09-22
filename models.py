@@ -2,6 +2,7 @@ from sqlalchemy import String, ForeignKey, DateTime, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from datetime import datetime
 
+
 class Base(DeclarativeBase):
     pass
 
@@ -51,6 +52,18 @@ class OrderItem(Base):
 
     order: Mapped["Order"] = relationship(back_populates="order_items")
     product: Mapped["Product"] = relationship(back_populates="order_items")
+
+
+order = Order(
+    id=1,
+    customer_id=1,
+    total_amount=10,
+    status='pending',
+    created_at=datetime.now(),
+    order_items=[]
+)
+
+
 
 
 

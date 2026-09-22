@@ -1,9 +1,12 @@
+import redis
 from database import get_db
 from models import Customer, Product, Order, OrderItem
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from fastapi import FastAPI, Depends, HTTPException, Query
+from fastapi import FastAPI, Depends, HTTPException, Query, Header
+import json
+
 
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from typing import Annotated, Literal
@@ -20,11 +23,21 @@ from schemas import (
 import os
 from dotenv import load_dotenv
 from service import valid_status_transition, total_price_calculation
-from repository import reduce_stock, get_paginated_orders, get_customers_data, get_paginated_products
+from repository import (
+    reduce_stock, get_paginated_orders, get_customers_data, get_paginated_products, get_customer_order
+)
 
-load_dotenv() #explicit better than implicit
+
+load_dotenv()
+
+
+
 
 app = FastAPI()
+redis = redis.Redis(host=os.getenv('REDIS_HOST', 'localhost'), port=6379, decode_responses=True)
+
+
+
 
 """SECURITY"""
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
@@ -180,6 +193,7 @@ def get_products(
 
 @app.post('/products', response_model=ProductResponse, status_code=201, dependencies=[Depends(require_admin)])
 def add_product(payload: ProductCreate, db:Session=Depends(get_db)):
+
     product = Product(
         name=payload.name, price=payload.price, stock_quantity=payload.stock_quantity
                       )
@@ -200,7 +214,7 @@ def get_customers_me(current_customer: Annotated[Customer, Depends(get_current_c
         raise HTTPException(status_code=404, detail='customer id not found')
     return customer
 
-@app.get('/customers', dependencies=[Depends(require_admin)], response_model=CustomersResponse)
+@app.get('/customers', response_model=CustomersResponse, dependencies=[Depends(require_admin)])
 def get_all_customers_data(db: Session = Depends(get_db)):
     return get_customers_data(db)
 
@@ -258,6 +272,63 @@ def change_order_status(order_id: int, payload: OrderStatusUpdate, db: Session =
     db.refresh(order)
 
     return order
+
+
+@app.post('/orders/{order_id}/payment', response_model=OrderResponse)
+def order_payment(
+        current_customer: Annotated[Customer, Depends(get_current_customer)],
+        db: Annotated[Session, Depends(get_db)],
+        idempotency_key: Annotated[str, Header()],
+        order_id: int,
+):
+
+    order = get_customer_order(
+        db=db,
+        order_id=order_id,
+        customer_id=current_customer.id)
+
+    if not order:
+        raise HTTPException(status_code=404, detail='order not found')
+
+    key = f'{order.customer_id}{order.id}{idempotency_key}'
+
+    cached_response = redis.get(key)
+    if cached_response:
+        return OrderResponse.model_validate(json.loads(cached_response))
+
+    if order.status != 'pending':
+        raise HTTPException(status_code=409, detail='wrong order status')
+
+    order.status = 'paid'
+
+    db.commit()
+    db.refresh(order)
+
+    response = OrderResponse.model_validate(order)
+    json_response = OrderResponse.model_dump_json(response)
+    redis.set(key, json_response, nx=True, ex=86400)
+
+    return response
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -113,8 +113,6 @@ def get_paginated_products(
     stmt1 = select(func.count(Product.id)).where(*conditions)
     total_count = db.execute(stmt1).scalar()
 
-
-
     return {
         'items': products,
         'page': page,
@@ -123,6 +121,14 @@ def get_paginated_products(
         'has_next_page': (page*page_size) < total_count,
         'has_previous_page': page > 1
     }
+
+def get_customer_order(db: Session, order_id: int, customer_id: int):
+    stmt = select(Order).where(Order.id==order_id, Order.customer_id==customer_id)
+    order = db.execute(stmt).scalar()
+
+    return order
+
+
 
 
 

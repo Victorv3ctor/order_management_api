@@ -10,11 +10,16 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  redis:
+    image: redis:7
+    ports:
+      - "6380:6379"
 
   app:
     build: .
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/my_postgres
+      REDIS_HOST: ${REDIS_HOST}
       SECRET_KEY: ${SECRET_KEY}
       ALGORITHM: ${ALGORITHM}
       ACCESS_TOKEN_EXPIRES_MINUTES: ${ACCESS_TOKEN_EXPIRES_MINUTES}
