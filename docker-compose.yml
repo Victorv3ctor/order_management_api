@@ -19,10 +19,10 @@ services:
     build: .
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/my_postgres
-      REDIS_HOST: ${REDIS_HOST}
+      REDIS_HOST: redis
       SECRET_KEY: ${SECRET_KEY}
       ALGORITHM: ${ALGORITHM}
-      ACCESS_TOKEN_EXPIRES_MINUTES: ${ACCESS_TOKEN_EXPIRES_MINUTES}
+      DUMMY_PASSWORD: ${DUMMY_PASSWORD}
     ports:
       - "8000:8000"
     depends_on:

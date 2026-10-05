@@ -1,5 +1,5 @@
 import pytest
-from service import total_price_calculation
+from services.order import order_total_price_calculation
 from types import SimpleNamespace
 
 
@@ -15,10 +15,10 @@ def products_by_id():
 
 
 def test_total_price_calculation(products_by_id, payload_items):
-    assert total_price_calculation(products_by_id, payload_items) == 200
+    assert order_total_price_calculation(products_by_id, payload_items) == 200
 
 def test_total_price_calculation_empty_order_items(products_by_id):
-    assert total_price_calculation(products_by_id, []) == 0
+    assert order_total_price_calculation(products_by_id, []) == 0
 
 
 

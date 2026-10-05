@@ -3,7 +3,7 @@ from sqlalchemy import create_engine, update, and_
 from sqlalchemy.orm import sessionmaker
 from models import Product
 from types import SimpleNamespace
-from repository import reduce_stock
+from services.order import reduce_stock
 
 
 @pytest.fixture
@@ -13,7 +13,7 @@ def db_connection():
     #engine - centralny element odpowiedzialny za zarzadzanie polaczeniami z baza
 
     SessionLocal = sessionmaker(bind=engine)
-    #sessionmaker - fabryka generujaca sesje, SessioNlocal(to jej wynik)
+    #sessionmaker - fabryka generujaca sesje, Sessionlocal(to jej wynik)
     #bind=engine mowi z jakim enginem ma pracowac sesja
 
     db = SessionLocal() #pobranie sesji do zmiennej db

@@ -35,7 +35,7 @@ class Product(Base):
     __tablename__ = "products"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(255), unique=True) #zrobic nazwa produktu unique
+    name: Mapped[str] = mapped_column(String(255), unique=True)
     price: Mapped[int]
     stock_quantity: Mapped[int]
 
@@ -54,14 +54,8 @@ class OrderItem(Base):
     product: Mapped["Product"] = relationship(back_populates="order_items")
 
 
-order = Order(
-    id=1,
-    customer_id=1,
-    total_amount=10,
-    status='pending',
-    created_at=datetime.now(),
-    order_items=[]
-)
+
+
 
 
 

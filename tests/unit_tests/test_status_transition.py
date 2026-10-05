@@ -1,7 +1,7 @@
 import pytest
-from service import valid_status_transition
+from services.order import valid_order_status_transition
+from exceptions import StatusTransitionError
 
-#Valid / invalid transitions
 @pytest.mark.parametrize("order_status, payload_status, result", [
     ('pending', 'paid', 'paid'),
     ('pending', 'cancelled', 'cancelled'),
@@ -9,14 +9,24 @@ from service import valid_status_transition
     ('paid', 'cancelled', 'cancelled'),
     ('processing', 'shipped', 'shipped'),
     ('shipped', 'completed', 'completed'),
-    ('cancelled', 'pending', None),
-    ('pending', 'processing', None),
-    ('completed', 'cancelled', None),
-    ('processing', 'cancelled', None),
-    (None, 'paid', None)
 ])
 
-def test_status_transition(order_status, payload_status, result):
-    assert valid_status_transition(order_status, payload_status) == result
+def test_status_transition_happy_path(order_status, payload_status, result):
+    assert valid_order_status_transition(order_status, payload_status) == result
+
+
+def test_status_transition_allowed_statuses_is_none():
+    order_status = 'cancelled'
+    new_status = 'paid'
+
+    with pytest.raises(StatusTransitionError):
+        valid_order_status_transition(order_status, new_status)
+
+def test_status_transition_new_status_not_in_allowed():
+    order_status='pending'
+    new_status='shipped'
+
+    with pytest.raises(StatusTransitionError):
+        valid_order_status_transition(order_status, new_status)
 
 

@@ -1,32 +1,46 @@
-from models import Customer
 from models import Product
-import pytest
+from conftest import customer_auth_token
 
-@pytest.fixture
-def customer_and_product(test_db_session):
-    db = test_db_session()
+def test_create_order_happy_path(client, customer_record, product_records, test_db_session):
+    product, product1 = product_records
+    auth_token = customer_auth_token(customer_record)
 
-    customer = Customer(id=1, name='order_test', email='order_test@example.com')
-    product = Product(id=1, name = 'tv', price=10, stock_quantity=5)
-    product1 = Product(id=2, name = 'phone', price=10, stock_quantity=5)
-
-    db.add(customer)
-    db.add(product)
-    db.add(product1)
-    db.commit()
-    db.close()
-    #Przy wywolaniu tego fixture
-    #na starcie funkcji testowej, wlatuje nam do bazy testowej
-    #customer o id 1 do tabeli Customers
-    # i product o id1 do tabeli Products i zamykamy polaczenie
-
-
-#test zaczynamy z customer id1 i productid1 w bazie
-def test_create_order_happy_path(customer_and_product, client):
     response = client.post(
         url='/orders',
+        headers={'Authorization': f'Bearer {auth_token}'},
         json = {
-            'customer_id': 1,
+            'items': [
+                {
+                    'product_id': product.id,
+                    'qty': 1
+                },
+                {
+                    'product_id': product1.id,
+                    'qty': 2
+                }
+            ]
+        }
+    )
+
+
+    assert response.status_code==201
+    assert response.json()['customer_id'] == customer_record.id
+    assert response.json()['status'] == 'pending'
+    assert response.json()['total_amount'] == (1 * product.price) + (2 * product1.price)
+
+    db = test_db_session()
+    product = db.get(Product, product.id)
+    product1 = db.get(Product, product1.id)
+    assert product.stock_quantity == 4
+    assert product1.stock_quantity == 3
+    db.close()
+
+
+def test_create_order_unauthorized_customer(client):
+    response = client.post(
+        url='/orders',
+        #no authorization header
+        json = {
             'items': [
                 {
                     'product_id': 1,
@@ -34,46 +48,25 @@ def test_create_order_happy_path(customer_and_product, client):
                 },
                 {
                     'product_id': 2,
-                    'qty': 1
+                    'qty': 2
                 }
             ]
         }
     )
-    order_items = response.json()['order_items']
-
-    assert response.status_code==201
-    assert response.json()['customer_id'] == 1
-    assert response.json()['status'] == 'pending'
-    assert response.json()['total_amount'] == 20
-    assert len(order_items) == 2
+    assert response.status_code==401
 
 
-def test_create_order_invalid_customer(customer_and_product, client):
+
+def test_create_order_invalid_product(client, customer_record):
+    auth_token = customer_auth_token(customer_record)
+
     response = client.post(
         url='/orders',
+        headers={'Authorization': f'Bearer {auth_token}'},
         json={
-            'customer_id': 99,
             'items': [
                 {
-                    'product_id': 1,
-                    'qty': 1
-                }
-            ]
-        }
-    )
-    assert response.status_code==404
-    assert response.json()['detail'] == 'customer id not found'
-
-
-
-def test_create_order_invalid_product(customer_and_product, client):
-    response = client.post(
-        url='/orders',
-        json={
-            'customer_id': 1,
-            'items': [
-                {
-                    'product_id': 3,
+                    'product_id': 999999,
                     'qty': 1
                 }
             ]
@@ -83,28 +76,85 @@ def test_create_order_invalid_product(customer_and_product, client):
     assert response.status_code==404
     assert response.json()['detail'] == 'one or more product not found'
 
-def test_create_order_invalid_product_stock(customer_and_product, client):
+def test_create_order_invalid_product_stock(customer_record, product_records, client, test_db_session):
+    product, product1 = product_records
+    auth_token = customer_auth_token(customer_record)
+
     response = client.post(
         url='/orders',
+        headers={'Authorization': f'Bearer {auth_token}'},
         json={
-            'customer_id': 1,
             'items': [
                 {
-                    'product_id': 2,
+                    'product_id': product.id,
                     'qty': 2
                 },
                 {
-                    'product_id': 1,
+                    'product_id': product1.id,
                     'qty': 10
                 }
             ]
         }
     )
     assert response.status_code==409
-    assert response.json()['detail'] == 'not enough stock for one product or more'
+    assert response.json()['detail'] == 'not available stock for one or more products'
+
+    db = test_db_session()
+    product = db.get(Product, product.id)
+    product1 = db.get(Product, product1.id)
+
+    assert product.stock_quantity == 5
+    assert product1.stock_quantity == 5
+    db.close()
 
 
 
+def test_create_order_invalid_request_item_qty(customer_record, client):
+    auth_token = customer_auth_token(customer_record)
+
+    response = client.post(
+        '/orders',
+        headers={'Authorization': f'Bearer {auth_token}'},
+        json={
+            'items': [
+                {
+                    'product_id': 1,
+                    'qty': 0
+                }
+            ]
+        }
+    )
+
+    assert response.status_code == 422
+
+def test_create_order_total_amount_validation_for_same_id(customer_record, product_records, client, test_db_session):
+    auth_token = customer_auth_token(customer_record)
+
+    product, product1 = product_records
+
+    response = client.post(
+        '/orders',
+        headers={'Authorization': f'Bearer {auth_token}'},
+        json={
+            'items': [
+                {
+                    'product_id': product.id,
+                    'qty': 1
+                },
+                {
+                    'product_id': product.id,
+                    'qty': 3
+                }
+            ]
+        }
+    )
+    assert response.status_code == 201
+    assert response.json()['total_amount'] == 40
+
+    db = test_db_session()
+    product = db.get(Product, product.id)
+    assert product.stock_quantity == 1
+    db.close()
 
 
 
