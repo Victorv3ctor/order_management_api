@@ -30,6 +30,7 @@ jobs:
 
     env:
       DATABASE_URL: postgresql+psycopg2://postgres:postgres@localhost:5433/postgres
+      DB_TESTS: postgresql+psycopg2://postgres:postgres@localhost:5433/postgres
       REDIS_HOST: localhost
       REDIS_PORT: 6380
       ALGORITHM: HS256
