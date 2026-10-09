@@ -29,6 +29,7 @@ jobs:
           --health-retries 5
 
     env:
+      DATABASE_URL: postgresql+psycopg2://postgres:postgres@localhost:5433/postgres #czy to napewno nam potrzebne, my dotykamy tylko testow
       DB_TESTS: postgresql+psycopg2://postgres:postgres@localhost:5433/postgres
       REDIS_HOST: localhost
       REDIS_PORT: 6380
