@@ -25,6 +25,8 @@ from services.order import get_paginated_orders, create_new_order, order_status_
 from services.product import get_paginated_products, create_new_product
 
 load_dotenv()
+#Fixme dodac test dla order_payment tak aby CI dotykalo redisa.
+#Fixme powtorzyc roznice srodowiskowe (chodzi o roznice zmiennych srodowiskowych w CI runner, docker)
 
 app = FastAPI()
 cache = redis.Redis(host=os.getenv('REDIS_HOST'), port=int(os.getenv("REDIS_PORT", 6379)), decode_responses=True) #port to native redis on my os
