@@ -1,5 +1,5 @@
 import pytest
-from app.main import app
+from api.main import app
 from types import SimpleNamespace
 from fastapi.testclient import TestClient
 from database import get_db
@@ -10,6 +10,8 @@ from security import create_token
 import os
 from dotenv import load_dotenv
 load_dotenv()
+import sys
+print(sys.path)
 
 
 "get_db DUMMY"

@@ -12,7 +12,7 @@ from exceptions import (
     EmailExistsError, InvalidCredentialsError, ProductNameExistsError, ProductsValidationError,
     OrderNotFoundError, StockValidationError, StatusTransitionError
 )
-from dependencies import get_current_customer, require_admin, filter_access
+from api.dependencies import get_current_customer, require_admin, filter_access
 
 from schemas.customer import CustomerCreate, CustomerResponse, CustomersInfoResponse
 from schemas.order import OrderCreate, OrderResponse, PaginatedOrderResponse, OrderStatusUpdate
@@ -27,7 +27,7 @@ from services.product import get_paginated_products, create_new_product
 load_dotenv()
 
 app = FastAPI()
-cache = redis.Redis(host=os.getenv('REDIS_HOST'), port=6379, decode_responses=True)
+cache = redis.Redis(host=os.getenv('REDIS_HOST'), port=int(os.getenv("REDIS_PORT", 6379)), decode_responses=True) #port to native redis on my os
 
 
 @app.post('/sign_in', response_model=CustomerResponse, status_code=201)
