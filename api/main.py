@@ -2,17 +2,14 @@ from database import get_db
 from sqlalchemy.orm import Session
 from fastapi import FastAPI, Depends, HTTPException, Query, Header, Path
 from fastapi.security import OAuth2PasswordRequestForm
+from api.dependencies import get_current_customer, require_admin, filter_access, get_cache
 from typing import Annotated, Literal
-import redis
-import os
-from dotenv import load_dotenv
-
 from models import Customer
+
 from exceptions import (
     EmailExistsError, InvalidCredentialsError, ProductNameExistsError, ProductsValidationError,
     OrderNotFoundError, StockValidationError, StatusTransitionError
 )
-from api.dependencies import get_current_customer, require_admin, filter_access
 
 from schemas.customer import CustomerCreate, CustomerResponse, CustomersInfoResponse
 from schemas.order import OrderCreate, OrderResponse, PaginatedOrderResponse, OrderStatusUpdate
@@ -24,13 +21,7 @@ from services.auth import authenticate_customer, create_access_token
 from services.order import get_paginated_orders, create_new_order, order_status_transition, process_order_payment
 from services.product import get_paginated_products, create_new_product
 
-load_dotenv()
-#Fixme dodac test dla order_payment tak aby CI dotykalo redisa.
-#Fixme powtorzyc roznice srodowiskowe (chodzi o roznice zmiennych srodowiskowych w CI runner, docker)
-
 app = FastAPI()
-cache = redis.Redis(host=os.getenv('REDIS_HOST'), port=int(os.getenv("REDIS_PORT", 6379)), decode_responses=True) #port to native redis on my os
-
 
 @app.post('/sign_in', response_model=CustomerResponse, status_code=201)
 def register(payload: CustomerCreate, db: Annotated[Session, Depends(get_db)]):
@@ -153,6 +144,7 @@ def order_payment(
         db: Annotated[Session, Depends(get_db)],
         idempotency_key: Annotated[str, Header()],
         order_id: Annotated[int, Path(ge=1)],
+        cache=Depends(get_cache)
 ):
     try:
         return process_order_payment(

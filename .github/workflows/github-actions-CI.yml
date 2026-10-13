@@ -18,21 +18,9 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
-      redis:
-        image: redis:7
-        ports:
-          - "6380:6379"
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     env:
-      DATABASE_URL: postgresql+psycopg2://postgres:postgres@localhost:5433/postgres #czy to napewno nam potrzebne, my dotykamy tylko testow
+      DATABASE_URL: postgresql+psycopg2://postgres:postgres@localhost:5433/postgres
       DB_TESTS: postgresql+psycopg2://postgres:postgres@localhost:5433/postgres
-      REDIS_HOST: localhost
-      REDIS_PORT: 6380
       ALGORITHM: HS256
       SECRET_KEY: test-secret-key-aCFxKatP2mNoBjaUqFYScsQZ
       DUMMY_PASSWORD: test-dummy-password

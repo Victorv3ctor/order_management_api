@@ -3,15 +3,17 @@ from api.main import app
 from types import SimpleNamespace
 from fastapi.testclient import TestClient
 from database import get_db
+from api.dependencies import get_cache
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
-from models import Customer, Product
+from models import Customer, Product, Order
 from security import create_token
 import os
 from dotenv import load_dotenv
+import datetime
+import fakeredis
 load_dotenv()
-import sys
-print(sys.path)
+
 
 
 "get_db DUMMY"
@@ -32,11 +34,50 @@ def overrides_db():
         print('closed')
         db.close()
 
+
+"get_cache DUMMY"
+@pytest.fixture
+def cache_override():
+    cache = fakeredis.FakeStrictRedis(decode_responses=True)
+    return cache
+
+
 def customer_auth_token(customer):
     to_encode = {
         'sub': customer.email
     }
     return create_token(to_encode)
+
+
+@pytest.fixture
+def order_records(customer_records, test_db_session): #creates 2 order records in table orders
+    customer, customer1 = customer_records
+
+    order = Order(
+        customer_id=customer.id, #id 1
+        total_amount=20,
+        status='pending',
+        created_at=datetime.datetime(2020,1,1)
+    )
+
+    order1 = Order(
+        customer_id=customer1.id, #id 2
+        total_amount=300,
+        status='paid',
+        created_at=datetime.datetime(2020,1,2)
+    )
+
+    db = test_db_session()
+
+    db.add(order)
+    db.add(order1)
+    db.commit()
+    db.refresh(order)
+    db.refresh(order1)
+
+    db.close()
+
+    return order, order1
 
 @pytest.fixture
 def test_db_session():
@@ -46,8 +87,9 @@ def test_db_session():
 
 
 @pytest.fixture
-def client(test_db_session):
+def client(test_db_session, cache_override):
     app.dependency_overrides[get_db] = overrides_db
+    app.dependency_overrides[get_cache] = lambda: cache_override
     client = TestClient(app)
 
 
@@ -78,21 +120,29 @@ def admin_record(test_db_session):
 
 
 @pytest.fixture
-def customer_record(test_db_session):
+def customer_records(test_db_session):
     db = test_db_session()
 
     customer = Customer(
-        email='test_customer',
+        email='test_customer0',
         hashed_password='hashed_pwd',
         role='CUSTOMER'
     )
 
+    customer1 = Customer(
+        email='test_customer1',
+        hashed_password='hashed_pwd1',
+        role='CUSTOMER'
+    )
+
     db.add(customer)
+    db.add(customer1)
     db.commit()
     db.refresh(customer)
+    db.refresh(customer1)
     db.close()
 
-    return customer
+    return customer, customer1
 
 @pytest.fixture
 def product_records(test_db_session):

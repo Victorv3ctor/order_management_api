@@ -1,70 +1,8 @@
-import pytest
-from models import Order, Customer
-import datetime
 from conftest import customer_auth_token
 
-@pytest.fixture
-def customers_records(test_db_session): #add 2 record to customers table
-    db = test_db_session()
 
-    customer = Customer(
-        email='test_customer0',
-        hashed_password='hashed_pwd',
-        role='CUSTOMER'
-    )
-
-    customer1 = Customer(
-        email='test_customer1',
-        hashed_password='hashed_pwd1',
-        role='CUSTOMER'
-    )
-
-    db.add(customer)
-    db.add(customer1)
-
-
-    db.commit()
-
-    db.refresh(customer)
-    db.refresh(customer1)
-
-
-    db.close()
-    return customer, customer1
-
-
-@pytest.fixture
-def order_records(customers_records, test_db_session): #creates 2 order records in table orders
-    customer, customer1 = customers_records
-
-    order = Order(
-        customer_id=customer.id, #id 1
-        total_amount=20,
-        status='pending',
-        created_at=datetime.datetime(2020,1,1)
-    )
-
-    order1 = Order(
-        customer_id=customer1.id, #id 2
-        total_amount=300,
-        status='paid',
-        created_at=datetime.datetime(2020,1,2)
-    )
-
-    db = test_db_session()
-
-    db.add(order)
-    db.add(order1)
-    db.commit()
-    db.refresh(order)
-    db.refresh(order1)
-
-    db.close()
-
-    return order, order1
-
-def test_get_order_happy_path_customer_role(client, order_records, customers_records):
-    customer, customer1 = customers_records
+def test_get_order_happy_path_customer_role(client, order_records, customer_records):
+    customer, customer1 = customer_records
 
     auth_token = customer_auth_token(customer)
 
@@ -97,8 +35,9 @@ def test_get_order_happy_path_admin_role(client, order_records, admin_record):
     assert not all(item['customer_id'] == admin_record.id for item in items)
 
 
-def test_get_order_fail_input_validation(client, customer_record):
-    auth_token = customer_auth_token(customer_record)
+def test_get_order_fail_input_validation(client, customer_records):
+    customer, customer1 = customer_records
+    auth_token = customer_auth_token(customer)
 
     response = client.get(
         url='/orders?page=-1&page_size=3',
@@ -115,8 +54,8 @@ def test_get_order_unauthorized_request(client):
     assert response.json()['detail'] == 'Not authenticated'
 
 
-def test_get_order_with_not_found_status(client, customers_records, order_records):
-    customer, customer1 = customers_records
+def test_get_order_with_not_found_status(client, customer_records, order_records):
+    customer, customer1 = customer_records
 
     auth_token = customer_auth_token(customer)
 
@@ -129,8 +68,8 @@ def test_get_order_with_not_found_status(client, customers_records, order_record
     assert response.json()['items'] == []
 
 
-def test_get_order_with_status(client, customers_records, order_records):
-    customer, customer1 = customers_records
+def test_get_order_with_status(client, customer_records, order_records):
+    customer, customer1 = customer_records
 
     auth_token = customer_auth_token(customer1)
 

@@ -19,8 +19,9 @@ def test_add_product_happy_path(client, admin_record):
     assert response.json()['stock_quantity'] == 10
 
 
-def test_add_product_unauthorized_role(client, customer_record):
-    auth_token = customer_auth_token(customer_record)
+def test_add_product_unauthorized_role(client, customer_records):
+    customer, customer1 = customer_records
+    auth_token = customer_auth_token(customer)
 
     response = client.post(
         url='/products',

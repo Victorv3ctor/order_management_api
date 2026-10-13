@@ -1,9 +1,10 @@
 from models import Product
 from conftest import customer_auth_token
 
-def test_create_order_happy_path(client, customer_record, product_records, test_db_session):
+def test_create_order_happy_path(client, customer_records, product_records, test_db_session):
     product, product1 = product_records
-    auth_token = customer_auth_token(customer_record)
+    customer, customer1 = customer_records
+    auth_token = customer_auth_token(customer)
 
     response = client.post(
         url='/orders',
@@ -24,7 +25,7 @@ def test_create_order_happy_path(client, customer_record, product_records, test_
 
 
     assert response.status_code==201
-    assert response.json()['customer_id'] == customer_record.id
+    assert response.json()['customer_id'] == customer.id
     assert response.json()['status'] == 'pending'
     assert response.json()['total_amount'] == (1 * product.price) + (2 * product1.price)
 
@@ -57,8 +58,9 @@ def test_create_order_unauthorized_customer(client):
 
 
 
-def test_create_order_invalid_product(client, customer_record):
-    auth_token = customer_auth_token(customer_record)
+def test_create_order_invalid_product(client, customer_records):
+    customer, customer1 = customer_records
+    auth_token = customer_auth_token(customer)
 
     response = client.post(
         url='/orders',
@@ -76,9 +78,10 @@ def test_create_order_invalid_product(client, customer_record):
     assert response.status_code==404
     assert response.json()['detail'] == 'one or more product not found'
 
-def test_create_order_invalid_product_stock(customer_record, product_records, client, test_db_session):
+def test_create_order_invalid_product_stock(customer_records, product_records, client, test_db_session):
+    customer, customer1 = customer_records
     product, product1 = product_records
-    auth_token = customer_auth_token(customer_record)
+    auth_token = customer_auth_token(customer)
 
     response = client.post(
         url='/orders',
@@ -109,8 +112,9 @@ def test_create_order_invalid_product_stock(customer_record, product_records, cl
 
 
 
-def test_create_order_invalid_request_item_qty(customer_record, client):
-    auth_token = customer_auth_token(customer_record)
+def test_create_order_invalid_request_item_qty(customer_records, client):
+    customer, customer1 = customer_records
+    auth_token = customer_auth_token(customer)
 
     response = client.post(
         '/orders',
@@ -127,8 +131,9 @@ def test_create_order_invalid_request_item_qty(customer_record, client):
 
     assert response.status_code == 422
 
-def test_create_order_total_amount_validation_for_same_id(customer_record, product_records, client, test_db_session):
-    auth_token = customer_auth_token(customer_record)
+def test_create_order_total_amount_validation_for_same_id(customer_records, product_records, client, test_db_session):
+    customer, customer1 = customer_records
+    auth_token = customer_auth_token(customer)
 
     product, product1 = product_records
 
