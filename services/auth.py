@@ -25,6 +25,7 @@ def create_access_token(customer):
     encoded_jwt = create_token(to_encode=payload.copy())
     return encoded_jwt
 
+
 def validate_current_customer_from_token(token, db):
     payload = decode_token(token)
     customer_email = payload.get("sub")

@@ -1,5 +1,6 @@
-from sqlalchemy import select, func
+from sqlalchemy import select, func, update, and_
 from models import Order
+
 
 def get_paginated_orders_data(
         db,
@@ -25,16 +26,51 @@ def get_paginated_orders_data(
 
     return orders, total
 
+
 def get_customer_order(db, order_id: int, customer_id: int):
     stmt = select(Order).where(Order.id==order_id, Order.customer_id==customer_id)
     order = db.execute(stmt).scalar()
 
     return order
 
+
 def add_new_order(db, order):
     db.add(order)
-    db.commit()
+
 
 def get_order_by_id(db, order_id):
     order = db.get(Order, order_id)
     return order
+
+
+def order_payment_status_transition(db, order):
+    stmt = (
+        update(Order)
+        .where(
+            and_(
+                Order.id==order.id,
+                Order.status=='pending'
+            )
+        )
+        .values(
+            status='paid'
+        )
+    )
+    result = db.execute(stmt)
+    return result.rowcount
+
+
+def order_status_atomic_transition(db, order, allowing_statuses, new_status):
+    stmt = (
+        update(Order)
+        .where(
+            and_(
+                Order.id == order.id,
+                Order.status.in_(allowing_statuses)
+            )
+        )
+        .values(status = new_status)
+    )
+    result = db.execute(stmt)
+    return result.rowcount
+

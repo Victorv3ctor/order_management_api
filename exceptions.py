@@ -13,6 +13,7 @@ class ProductsValidationError(Exception):
 class StockValidationError(Exception):
     detail='not available stock for one or more products'
 
+
 class OrderNotFoundError(Exception):
     detail='order not found'
 
@@ -33,3 +34,10 @@ class ExpiredTokenError(Exception):
 
 class NoPermissionError(Exception):
     detail='no permission'
+
+class CacheError(Exception):
+    pass
+
+class DatabaseError(Exception):
+    pass
+

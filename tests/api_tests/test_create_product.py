@@ -33,7 +33,7 @@ def test_add_product_unauthorized_role(client, customer_records):
         }
     )
 
-    assert response.status_code==401
+    assert response.status_code==403
     assert response.json()['detail'] == 'no permission'
 
 def test_add_product_name_duplicate(client, admin_record, product_records):

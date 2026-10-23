@@ -1,7 +1,9 @@
 from security import get_hashed_password
 from models import Customer
 from repositories.customer import add_new_customer, get_customers
+import logging
 
+logger = logging.getLogger(__name__)
 
 def create_new_customer(db, payload_email, payload_password):
     hashed_password = get_hashed_password(payload_password)
@@ -11,12 +13,14 @@ def create_new_customer(db, payload_email, payload_password):
     )
 
     add_new_customer(db, customer)
+    db.commit()
+    logger.info('customer_id %s saved to database', customer.id)
+
 
     return customer
 
 def get_all_customers(db):
     customers = get_customers(db)
-
     return {
         'customers': customers
     }

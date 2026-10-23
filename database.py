@@ -1,12 +1,21 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import SQLAlchemyError
+from exceptions import DatabaseError
 import os
 from dotenv import load_dotenv
 load_dotenv()
 
 connection_url = os.getenv("DATABASE_URL")
-engine = create_engine(connection_url, echo=True)
-SessionLocal = sessionmaker(bind=engine)
+engine = create_engine(connection_url, hide_parameters=True)
+SessionLocal = sessionmaker(bind=engine, autoflush=True)
+
+def database_health_check(db):
+    try:
+        db.execute(text("SELECT 1"))
+        return True
+    except SQLAlchemyError as error:
+        raise DatabaseError from error
 
 def get_db():
     db = SessionLocal()
@@ -17,6 +26,18 @@ def get_db():
         raise
     finally:
         db.close()
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

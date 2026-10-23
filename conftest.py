@@ -1,9 +1,9 @@
 import pytest
-from api.main import app
+from app.main import app
 from types import SimpleNamespace
 from fastapi.testclient import TestClient
 from database import get_db
-from api.dependencies import get_cache
+from cache import get_cache
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from models import Customer, Product, Order

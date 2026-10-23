@@ -3,6 +3,7 @@ from sqlalchemy.exc import IntegrityError
 from exceptions import ProductNameExistsError
 from models import Product
 
+
 def reduce_stock(db, product_id: int, qty: int):
     stmt = (
         update(Product)
@@ -18,6 +19,7 @@ def reduce_stock(db, product_id: int, qty: int):
     )
     result = db.execute(stmt)
     return result.rowcount
+
 
 def get_paginated_products_data(
         db,
@@ -44,13 +46,17 @@ def get_paginated_products_data(
 
     return products, total
 
+
 def add_new_product(db, product):
     db.add(product)
     try:
-        db.commit()
+        db.flush()
     except IntegrityError as error:
         if 'products_name_key' in str(error):
             raise ProductNameExistsError()
+        else:
+            raise
+
 
 def get_products_by_id(db, products_id: list):
     stmt = select(Product).where(Product.id.in_(products_id))

@@ -1,27 +1,59 @@
 from database import get_db
+from cache import get_cache
 from sqlalchemy.orm import Session
-from fastapi import FastAPI, Depends, HTTPException, Query, Header, Path
+from fastapi import FastAPI, Depends, HTTPException, Query, Header, Path, Request
+from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
-from api.dependencies import get_current_customer, require_admin, filter_access, get_cache
+from app.dependencies import get_current_customer, require_admin, filter_access
 from typing import Annotated, Literal
 from models import Customer
-
+import logging
+from fastapi import Response
+from schemas.customer import CustomerCreate, CustomerResponse, CustomersInfoResponse
+from schemas.order import OrderCreate, OrderResponse, PaginatedOrderResponse, OrderStatusUpdate
+from schemas.product import ProductCreate, ProductResponse, PaginatedProductsResponse
+from schemas.auth import TokenResponse
+from schemas.health import HealthResponse
+from services.customer import create_new_customer, get_all_customers
+from services.auth import authenticate_customer, create_access_token
+from services.order import get_paginated_orders, create_new_order, order_status_transition, process_order_payment
+from services.product import get_paginated_products, create_new_product
+from services.health import get_health_check
 from exceptions import (
     EmailExistsError, InvalidCredentialsError, ProductNameExistsError, ProductsValidationError,
     OrderNotFoundError, StockValidationError, StatusTransitionError
 )
 
-from schemas.customer import CustomerCreate, CustomerResponse, CustomersInfoResponse
-from schemas.order import OrderCreate, OrderResponse, PaginatedOrderResponse, OrderStatusUpdate
-from schemas.product import ProductCreate, ProductResponse, PaginatedProductsResponse
-from schemas.auth import TokenResponse
+logging.basicConfig(
+    level=logging.INFO,
+    format=" %(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
+logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
 
-from services.customer import create_new_customer, get_all_customers
-from services.auth import authenticate_customer, create_access_token
-from services.order import get_paginated_orders, create_new_order, order_status_transition, process_order_payment
-from services.product import get_paginated_products, create_new_product
+app = FastAPI(title='Order Management App')
 
-app = FastAPI()
+@app.exception_handler(Exception)
+def unexpected_exception_handler(request: Request, exc: Exception):
+    logger.error(
+        'request %s %s unexpected error',
+        request.method, request.url.path,
+        exc_info=exc
+    )
+
+    return JSONResponse(
+        status_code=500,
+        content={'detail':'unexpected app error'}
+    )
+
+
+@app.get('/health', status_code=200, response_model=HealthResponse, responses = {503: {"model": HealthResponse}})
+def health_check(response: Response, db: Annotated[Session, Depends(get_db)], cache = Depends(get_cache)):
+    health_response = get_health_check(db, cache)
+    if health_response.status != 'health':
+        response.status_code=503
+    return health_response
+
 
 @app.post('/sign_in', response_model=CustomerResponse, status_code=201)
 def register(payload: CustomerCreate, db: Annotated[Session, Depends(get_db)]):
@@ -32,11 +64,13 @@ def register(payload: CustomerCreate, db: Annotated[Session, Depends(get_db)]):
             db=db
         )
     except EmailExistsError as error:
+        logger.warning('rejected attempt to add customer_email: %s  to db', payload.email)
         raise HTTPException(status_code=409, detail=error.detail)
 
     return customer
 
-@app.post('/auth/login')
+
+@app.post('/auth/login', response_model=TokenResponse)
 def login_in(form_data=Depends(OAuth2PasswordRequestForm), db: Session = Depends(get_db)):
     try:
         customer = authenticate_customer(
@@ -45,11 +79,13 @@ def login_in(form_data=Depends(OAuth2PasswordRequestForm), db: Session = Depends
             password=form_data.password
         )
     except InvalidCredentialsError as error:
+        logger.warning('invalid login credentials for customer_email')
         raise HTTPException(status_code=401, detail=error.detail)
 
     access_token = create_access_token(customer)
 
     return TokenResponse(access_token=access_token, token_type= "bearer")
+
 
 @app.get('/orders', response_model=PaginatedOrderResponse)
 def get_orders(
@@ -70,6 +106,7 @@ def get_orders(
         customer_id=customer_id,
     )
 
+
 @app.get('/products', response_model=PaginatedProductsResponse)
 def get_products(
         page: Annotated[int, Query(ge=1)],
@@ -89,6 +126,7 @@ def get_products(
         product_id=product_id
     )
 
+
 @app.post('/products', response_model=ProductResponse, status_code=201, dependencies=[Depends(require_admin)])
 def add_product(payload: ProductCreate, db: Annotated[Session, Depends(get_db)]):
     try:
@@ -98,18 +136,19 @@ def add_product(payload: ProductCreate, db: Annotated[Session, Depends(get_db)])
             price=payload.price,
             stock_qty=payload.stock_quantity
         )
-
     except ProductNameExistsError as error:
+        logger.warning('rejected to add new product to database, product_name: %s ', payload.name)
         raise HTTPException(status_code=409, detail=error.detail)
+
 
 @app.get('/customers/me', response_model=CustomerResponse)
 def get_customers_me(current_customer: Annotated[Customer, Depends(get_current_customer)]) :
     return current_customer
 
+
 @app.get('/customers', response_model=CustomersInfoResponse, dependencies=[Depends(require_admin)])
 def get_all_customers_data(db: Annotated[Session, Depends(get_db)]):
     return get_all_customers(db)
-
 
 
 @app.post('/orders', response_model=OrderResponse, status_code=201)
@@ -120,23 +159,29 @@ def create_order(payload: OrderCreate, current_customer: Annotated[Customer, Dep
             items=payload.items,
             customer=current_customer
         )
-    except ProductsValidationError as err:
-        raise HTTPException(status_code=404, detail=err.detail)
-    except StockValidationError as err:
-        raise HTTPException(status_code=409, detail=err.detail)
+    except ProductsValidationError as error:
+        logger.warning('products validation error for products %s for customer_id: %s ', payload.items, current_customer.id)
+        raise HTTPException(status_code=404, detail=error.detail)
+    except StockValidationError as error:
+        logger.warning('stock validation error for products %s  for customer_id: %s', payload.items, current_customer.id)
+        raise HTTPException(status_code=409, detail=error.detail)
+
 
 @app.patch('/orders/{order_id}', response_model = OrderResponse, dependencies=[Depends(require_admin)])
-def change_order_status(order_id: Annotated[int, Path(ge=1)], payload: OrderStatusUpdate, db: Annotated[Session, Depends(get_db)]):
+def change_order_status(payload: OrderStatusUpdate, order_id: Annotated[int, Path(ge=1)], db: Annotated[Session, Depends(get_db)]):
     try:
         return order_status_transition(
             db=db,
             order_id=order_id,
             new_status=payload.status
         )
-    except OrderNotFoundError as err:
-        raise HTTPException(status_code=404, detail=err.detail)
-    except StatusTransitionError as err:
-        raise HTTPException(status_code=409, detail=err.detail)
+    except OrderNotFoundError as error:
+        logger.warning('order_id %s not found', order_id)
+        raise HTTPException(status_code=404, detail=error.detail)
+    except StatusTransitionError as error:
+        logger.warning('status transition to %s rejected for order_id %s', payload.status, order_id)
+        raise HTTPException(status_code=409, detail=error.detail)
+
 
 @app.post('/orders/{order_id}/payment')
 def order_payment(
@@ -154,10 +199,13 @@ def order_payment(
             customer_id=current_customer.id,
             idempotency_key=idempotency_key
         )
-    except OrderNotFoundError as err:
-        raise HTTPException(status_code=404, detail=err.detail)
-    except StatusTransitionError as err:
-        raise HTTPException(status_code=409, detail=err.detail)
+
+    except OrderNotFoundError as error:
+        logger.warning('customer_id %s order_id %s not found', current_customer.id, order_id)
+        raise HTTPException(status_code=404, detail=error.detail)
+    except StatusTransitionError as error:
+        logger.warning('customer_id %s status transition to paid rejected for order_id %s', current_customer.id, order_id)
+        raise HTTPException(status_code=409, detail=error.detail)
 
 
 

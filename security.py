@@ -1,6 +1,6 @@
 from fastapi.security import OAuth2PasswordBearer
 import jwt
-from jwt.exceptions import InvalidSignatureError, ExpiredSignatureError
+from jwt.exceptions import InvalidTokenError, ExpiredSignatureError
 from exceptions import SignatureError, ExpiredTokenError
 from pwdlib import PasswordHash
 import os
@@ -29,10 +29,21 @@ def create_token(to_encode: dict):
 def decode_token(token):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    except InvalidSignatureError:
-        raise SignatureError()
-    except ExpiredSignatureError:
-        raise ExpiredTokenError()
+    except ExpiredSignatureError as error:
+        raise ExpiredTokenError() from error
+    except InvalidTokenError as error:
+        raise SignatureError() from error
+
+
 
     return payload
+
+
+
+
+
+
+
+
+
 

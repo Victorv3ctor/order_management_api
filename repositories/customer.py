@@ -3,19 +3,25 @@ from sqlalchemy.exc import IntegrityError
 from exceptions import EmailExistsError
 from models import Customer
 
+
 def get_customers(db):
     stmt = select(Customer)
     customers = db.execute(stmt).scalars().all()
 
     return customers
 
+
 def add_new_customer(db, customer):
-    db.add(customer)
+    db.add(customer) #rejesdtruje w pamieci sesji zmiane
     try:
-        db.commit()
+        db.flush() #wysyla sql query insert w tym przypadku do bazy (baza returning id) ,
+        # wiec tutaj reejstruje ewentualne niescislosci jak bledy z bazy przy sql query
     except IntegrityError as error:
         if 'customers_email_key' in str(error):
             raise EmailExistsError() from error
+        else:
+            raise
+
 
 def get_customer_by_email(db, email):
     stmt = select(Customer).where(Customer.email==email)

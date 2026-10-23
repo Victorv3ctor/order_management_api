@@ -23,7 +23,7 @@ def test_order_payment_single_request(client, customer_records, order_records, c
     db.close()
 
     assert order_after_payment.status=='paid'
-    cached_key = f'{'1'}{customer.id}{'00'}'
+    cached_key = f'{'1'}:{customer.id}:{'00'}'
     assert cached_key in cache_override.keys()
 
 def test_order_payment_double_rq(client, customer_records, order_records, cache_override, test_db_session):
@@ -40,7 +40,7 @@ def test_order_payment_double_rq(client, customer_records, order_records, cache_
     )
 
     assert response.status_code==200
-    key = f'{order.id}{customer.id}{'00'}'
+    key = f'{order.id}:{customer.id}:{'00'}'
     assert key in cache_override.keys()
 
     db = test_db_session()

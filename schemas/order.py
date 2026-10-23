@@ -2,6 +2,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from typing import Literal
 import datetime
 
+
 class OrderItemCreate(BaseModel):
     product_id: int
     qty: int = Field(gt=0)

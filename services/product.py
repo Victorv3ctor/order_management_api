@@ -1,5 +1,8 @@
 from models import Product
 from repositories.product import get_paginated_products_data, add_new_product
+import logging
+
+logger = logging.getLogger(__name__)
 
 def get_paginated_products(
         db,
@@ -56,4 +59,7 @@ def create_new_product(
     )
 
     add_new_product(db, product)
+    db.commit()
+    logger.info('new product_id: %s saved to database ', product.id)
+
     return product

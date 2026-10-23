@@ -1,5 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 
+
 class ProductCreate(BaseModel):
     name: str
     price: int
