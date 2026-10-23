@@ -1,6 +1,6 @@
-from security import get_hashed_password
-from models import Customer
-from repositories.customer import add_new_customer, get_customers
+from app.security import get_hashed_password
+from app.models import Customer
+from app.repositories.customer import add_new_customer, get_customers
 import logging
 
 logger = logging.getLogger(__name__)

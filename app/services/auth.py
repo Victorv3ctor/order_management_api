@@ -1,6 +1,6 @@
-from security import verify_password, create_token, decode_token, DUMMY_HASH
-from repositories.customer import get_customer_by_email
-from exceptions import InvalidCredentialsError, NoPermissionError, InvalidSubCredentials, CustomerNotFound
+from app.security import verify_password, create_token, decode_token, DUMMY_HASH
+from app.repositories.customer import get_customer_by_email
+from app.exceptions import InvalidCredentialsError, NoPermissionError, InvalidSubCredentials, CustomerNotFound
 from datetime import datetime, timezone, timedelta
 
 def authenticate_customer(db, email, password):

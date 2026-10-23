@@ -4,7 +4,7 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
-from models import Base
+from app.models import Base
 
 
 
@@ -14,8 +14,8 @@ config = context.config
 
 import os
 from dotenv import load_dotenv
-
 load_dotenv()
+
 config.set_main_option("sqlalchemy.url", os.getenv("DATABASE_URL"))
 
 # Interpret the config file for Python logging.

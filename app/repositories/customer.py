@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from exceptions import EmailExistsError
-from models import Customer
+from app.exceptions import EmailExistsError
+from app.models import Customer
 
 
 def get_customers(db):

@@ -1,7 +1,7 @@
-from database import database_health_check
-from cache import cache_health_check
-from schemas.health import HealthResponse
-from exceptions import DatabaseError, CacheError
+from app.database import database_health_check
+from app.cache import cache_health_check
+from app.schemas.health import HealthResponse
+from app.exceptions import DatabaseError, CacheError
 import logging
 
 logger = logging.getLogger(__name__)

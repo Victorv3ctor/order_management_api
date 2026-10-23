@@ -1,4 +1,4 @@
-from models import Product
+from app.models import Product
 from conftest import customer_auth_token
 
 def test_create_order_happy_path(client, customer_records, product_records, test_db_session):

@@ -1,5 +1,5 @@
 from sqlalchemy import select, func, update, and_
-from models import Order
+from app.models import Order
 
 
 def get_paginated_orders_data(

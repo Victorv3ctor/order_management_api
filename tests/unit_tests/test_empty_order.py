@@ -1,5 +1,5 @@
 import pytest
-from schemas.order import OrderCreate, OrderItemCreate
+from app.schemas.order import OrderCreate, OrderItemCreate
 
 def test_order_create_without_items():
     with pytest.raises(ValueError):

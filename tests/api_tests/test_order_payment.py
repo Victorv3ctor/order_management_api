@@ -1,4 +1,4 @@
-from models import Order
+from app.models import Order
 from conftest import customer_auth_token
 
 def test_order_payment_single_request(client, customer_records, order_records, cache_override, test_db_session):

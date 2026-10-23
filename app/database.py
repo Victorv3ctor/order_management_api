@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
-from exceptions import DatabaseError
+from app.exceptions import DatabaseError
 import os
 from dotenv import load_dotenv
 load_dotenv()

@@ -1,25 +1,25 @@
-from database import get_db
-from cache import get_cache
+from app.database import get_db
+from app.cache import get_cache
 from sqlalchemy.orm import Session
 from fastapi import FastAPI, Depends, HTTPException, Query, Header, Path, Request
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from app.dependencies import get_current_customer, require_admin, filter_access
 from typing import Annotated, Literal
-from models import Customer
+from app.models import Customer
 import logging
 from fastapi import Response
-from schemas.customer import CustomerCreate, CustomerResponse, CustomersInfoResponse
-from schemas.order import OrderCreate, OrderResponse, PaginatedOrderResponse, OrderStatusUpdate
-from schemas.product import ProductCreate, ProductResponse, PaginatedProductsResponse
-from schemas.auth import TokenResponse
-from schemas.health import HealthResponse
-from services.customer import create_new_customer, get_all_customers
-from services.auth import authenticate_customer, create_access_token
-from services.order import get_paginated_orders, create_new_order, order_status_transition, process_order_payment
-from services.product import get_paginated_products, create_new_product
-from services.health import get_health_check
-from exceptions import (
+from app.schemas.customer import CustomerCreate, CustomerResponse, CustomersInfoResponse
+from app.schemas.order import OrderCreate, OrderResponse, PaginatedOrderResponse, OrderStatusUpdate
+from app.schemas.product import ProductCreate, ProductResponse, PaginatedProductsResponse
+from app.schemas.auth import TokenResponse
+from app.schemas.health import HealthResponse
+from app.services.customer import create_new_customer, get_all_customers
+from app.services.auth import authenticate_customer, create_access_token
+from app.services.order import get_paginated_orders, create_new_order, order_status_transition, process_order_payment
+from app.services.product import get_paginated_products, create_new_product
+from app.services.health import get_health_check
+from app.exceptions import (
     EmailExistsError, InvalidCredentialsError, ProductNameExistsError, ProductsValidationError,
     OrderNotFoundError, StockValidationError, StatusTransitionError
 )
@@ -55,7 +55,7 @@ def health_check(response: Response, db: Annotated[Session, Depends(get_db)], ca
     return health_response
 
 
-@app.post('/sign_in', response_model=CustomerResponse, status_code=201)
+@app.post('/auth/register', response_model=CustomerResponse, status_code=201)
 def register(payload: CustomerCreate, db: Annotated[Session, Depends(get_db)]):
     try:
         customer = create_new_customer(
@@ -79,7 +79,7 @@ def login_in(form_data=Depends(OAuth2PasswordRequestForm), db: Session = Depends
             password=form_data.password
         )
     except InvalidCredentialsError as error:
-        logger.warning('invalid login credentials for customer_email')
+        logger.warning('invalid login credentials')
         raise HTTPException(status_code=401, detail=error.detail)
 
     access_token = create_access_token(customer)

@@ -1,9 +1,9 @@
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from models import Product
+from app.models import Product
 from types import SimpleNamespace
-from services.order import reduce_stock
+from app.services.order import reduce_stock
 import os
 from dotenv import load_dotenv
 load_dotenv()

@@ -1,5 +1,5 @@
-from models import Product
-from repositories.product import get_paginated_products_data, add_new_product
+from app.models import Product
+from app.repositories.product import get_paginated_products_data, add_new_product
 import logging
 
 logger = logging.getLogger(__name__)

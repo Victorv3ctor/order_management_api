@@ -1,5 +1,5 @@
 import pytest
-from services.order import order_total_price_calculation
+from app.services.order import order_total_price_calculation
 from types import SimpleNamespace
 
 

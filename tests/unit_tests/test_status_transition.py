@@ -1,5 +1,5 @@
 import pytest
-from services.order import allowed_statuses_to_change_for_new_status
+from app.services.order import allowed_statuses_to_change_for_new_status
 
 
 

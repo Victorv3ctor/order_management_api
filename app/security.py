@@ -1,7 +1,7 @@
 from fastapi.security import OAuth2PasswordBearer
 import jwt
 from jwt.exceptions import InvalidTokenError, ExpiredSignatureError
-from exceptions import SignatureError, ExpiredTokenError
+from app.exceptions import SignatureError, ExpiredTokenError
 from pwdlib import PasswordHash
 import os
 from dotenv import load_dotenv
@@ -19,12 +19,15 @@ ALGORITHM = os.getenv('ALGORITHM')
 def get_hashed_password(plain_password: str):
     return password_hash.hash(plain_password)
 
+
 def verify_password(plain_password, hashed_password):
     return password_hash.verify(plain_password, hashed_password)
+
 
 def create_token(to_encode: dict):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
+
 
 def decode_token(token):
     try:

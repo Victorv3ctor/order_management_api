@@ -2,12 +2,12 @@ import pytest
 from app.main import app
 from types import SimpleNamespace
 from fastapi.testclient import TestClient
-from database import get_db
-from cache import get_cache
+from app.database import get_db
+from app.cache import get_cache
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
-from models import Customer, Product, Order
-from security import create_token
+from app.models import Customer, Product, Order
+from app.security import create_token
 import os
 from dotenv import load_dotenv
 import datetime

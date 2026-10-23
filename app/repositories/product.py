@@ -1,7 +1,7 @@
 from sqlalchemy import update, and_, select, func
 from sqlalchemy.exc import IntegrityError
-from exceptions import ProductNameExistsError
-from models import Product
+from app.exceptions import ProductNameExistsError
+from app.models import Product
 
 
 def reduce_stock(db, product_id: int, qty: int):

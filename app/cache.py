@@ -2,7 +2,7 @@ import redis
 import os
 import redis.exceptions
 from dotenv import load_dotenv
-from exceptions import CacheError
+from app.exceptions import CacheError
 load_dotenv()
 
 def get_cache():
