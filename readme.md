@@ -2,8 +2,7 @@
 
 REST API for a small shop, built to stay correct under concurrent requests, retries and partial failures.
 
-`Python 3.12`·`FastAPI`·`PostgreSQL16`·`SQLAlchemy2`·`Alembic`·`Redis7`·`Docker`·`pytest`·`GitHub Actions`·`logging`
-
+`Python 3.12` · `FastAPI` · `PostgreSQL 16` · `SQLAlchemy 2` · `Alembic` · `Redis 7` · `Docker` · `JWT` · `OAuth2` · `Argon2` · `Pydantic` · `pytest` · `GitHub Actions`
 ## 1. What is this?
 
 Customers register and place orders\
