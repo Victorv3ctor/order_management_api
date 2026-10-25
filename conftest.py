@@ -12,8 +12,21 @@ import os
 from dotenv import load_dotenv
 import datetime
 import fakeredis
+from app.models import Base
 load_dotenv()
 
+
+@pytest.fixture(scope="session", autouse=True)
+def create_test_database_tables():
+    if os.getenv("CI") == "true":
+        yield
+        return
+
+    connection_url = os.getenv("DB_TESTS")
+    engine = create_engine(connection_url, echo=True)
+    Base.metadata.create_all(bind=engine)
+    yield
+    Base.metadata.drop_all(bind=engine)
 
 
 "get_db DUMMY"

@@ -71,15 +71,35 @@ UPDATE customers SET role = 'ADMIN' WHERE email = 'you@example.com';
 
 ## 6. How to run tests
 
-```bash
-docker compose up -d db
-docker compose exec db createdb -U <POSTGRES_USER> <test_db_name>   # once
-DATABASE_URL=<value of DB_TESTS> alembic upgrade head               # once
-pytest
-```
+Tests run against a separate database, so your development data is never touched.
 
-`DB_TESTS` must never point to the app database: tables are truncated after every test.
+1. Start the database container:
 
+   ```bash
+   docker compose up -d db
+   ```
+
+2. Create the test database manually (the tests create the tables, but not the database itself):
+
+   ```bash
+   docker compose exec db psql -U <user> -c "CREATE DATABASE tests_db;"
+   ```
+
+3. Set the test database URL in `.env`:
+
+   ```
+   DB_TESTS=postgresql://<user>:<password>@localhost:5433/tests_db
+   ```
+
+4. Run the tests:
+
+   ```bash
+   pytest
+   ```
+
+Tables are created automatically at the start of the test session and dropped at
+the end. In CI (`CI=true`) this step is skipped, because the schema comes from
+`alembic upgrade head`.
 ## 7. API overview
 
 
